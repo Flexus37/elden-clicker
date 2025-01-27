@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus } from "lucide-react";
@@ -16,7 +17,6 @@ export default function Home() {
   
   // Список музыкальных треков
   const audioTracks = [
-    "/audio/gimn.mp3",
     "/audio/track1.mp3",
     "/audio/track2.mp3",
     "/audio/track3.mp3",
@@ -26,6 +26,8 @@ export default function Home() {
     "/audio/track7.mp3",
     "/audio/track8.mp3"
   ];
+  
+  const winTrack = ["/audio/gimn.mp3"];
   
   // Функция для воспроизведения случайного трека
   const playRandomTrack = () => {
@@ -57,7 +59,7 @@ export default function Home() {
     }
     
     stopCurrentTrack()
-    const audio = new Audio(audioTracks[0]);
+    const audio = new Audio(winTrack[0]);
     setCurrentAudio(audio);
     audio.play();
   }
@@ -207,9 +209,10 @@ export default function Home() {
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 gap-16 font-[family-name:var(--font-geist-sans)]">
       <header className="flex flex-row w-full justify-center">
-        <h1 className="text-4xl">Elden Ring Кликер</h1>
+        <h1 className="text-3xl">Elden Ring Кликер</h1>
       </header>
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
+      <main className="flex flex-col gap-8 row-start-2 items-center justify-center sm:items-start">
+        <Image className="mx-auto" src="/papich.gif" alt="Гифка папича" width={250} height={250} />
         <div className="flex justify-center w-full">
           <BossSelectMenu bosses={bosses} onAddBoss={addBoss} onSelectBoss={selectBoss} />
         </div>
@@ -232,13 +235,16 @@ export default function Home() {
           <p className="text-lg text-gray-500">Выберите босса, чтобы начать.</p>
         )}
       </main>
-      <footer className="flex justify-center w-full gap-x-6">
-        <Button onClick={stopCurrentTrack}>Остановить музыку</Button>
-        {
-          isAudioEnable
-          ? <Button onClick={toggleMusicState}>Запретить музыку</Button>
-          : <Button onClick={toggleMusicState}>Разрешить музыку</Button>
-        }
+      <footer className="flex flex-col justify-center items-center w-full gap-x-4">
+        <h3 className="text-lg mb-3">Музыка:</h3>
+        <div className="flex flex-row justify-center w-full gap-x-4">
+          <Button onClick={stopCurrentTrack}>Стоп</Button>
+          {
+            isAudioEnable
+              ? <Button onClick={toggleMusicState}>Запретить</Button>
+              : <Button onClick={toggleMusicState}>Разрешить</Button>
+          }
+        </div>
       </footer>
     </div>
   );
