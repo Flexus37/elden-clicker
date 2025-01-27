@@ -4,6 +4,10 @@
 
 body {
   font-family: Arial, Helvetica, sans-serif;
+  .\[\&_svg\]\:size-4 svg {
+    width: auto;
+    height: auto;
+  }
 }
 
 @layer base {
