@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Volume2, VolumeOff, Pause, Crown } from "lucide-react";
 import { BossSelectMenu } from "@/components/bossSelectMenu/BossSelectMenu";
 import { Boss, DeathCounter, type NewBoss } from '@/types/boss'
 import { playRandomTrack, playWinTrack, stopCurrentTrack, toggleMusicState } from '@/utils/audio'
@@ -174,7 +174,10 @@ export default function Home() {
                 <Plus size={72} />
               </Button>
             </div>
-            <Button onClick={() => playWinTrack(audioState)} className="text-center mt-6 text-xl">Победа 👑</Button>
+            <Button onClick={() => playWinTrack(audioState)} className="text-center mt-6 text-xl">
+              Победа
+              <Crown />
+            </Button>
           </div>
         ) : (
           <p className="text-lg text-gray-500">Выберите босса, чтобы начать.</p>
@@ -183,11 +186,20 @@ export default function Home() {
       <footer className="flex flex-col justify-center items-center w-full gap-x-4">
         <h3 className="text-lg mb-3">Музыка:</h3>
         <div className="flex flex-row justify-center w-full gap-x-4">
-          <Button onClick={() => stopCurrentTrack(audioState.currentAudio, audioState.setCurrentAudio)}>Стоп</Button>
+          <Button onClick={() => stopCurrentTrack(audioState.currentAudio, audioState.setCurrentAudio)}>
+            <Pause />
+            Пауза
+          </Button>
           {
             audioState.isAudioEnabled
-              ? <Button onClick={() => toggleMusicState(audioState.toggleAudio)}>Запретить</Button>
-              : <Button onClick={() => toggleMusicState(audioState.toggleAudio)}>Разрешить</Button>
+              ? <Button onClick={() => toggleMusicState(audioState.toggleAudio)}>
+                <VolumeOff />
+                Запретить
+            </Button>
+              : <Button onClick={() => toggleMusicState(audioState.toggleAudio)}>
+                <Volume2 />
+                Разрешить
+              </Button>
           }
         </div>
       </footer>

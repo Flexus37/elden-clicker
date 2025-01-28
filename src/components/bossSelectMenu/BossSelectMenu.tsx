@@ -82,7 +82,7 @@ export const BossSelectMenu: React.FC<BossSelectMenuProps> = ({ bosses, onAddBos
 					</div>
 					<DialogFooter>
 						<Button type="button" onClick={handleAddBoss}>
-							Сохранить
+							Добавить босса
 						</Button>
 					</DialogFooter>
 				</DialogContent>
