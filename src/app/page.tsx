@@ -1,5 +1,6 @@
 "use client";
 
+import { useAudioStore } from '@/store/audioStore'
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
@@ -7,83 +8,27 @@ import { Button } from "@/components/ui/button";
 import { Plus, Minus } from "lucide-react";
 import { BossSelectMenu } from "@/components/bossSelectMenu/BossSelectMenu";
 import { Boss, DeathCounter, type NewBoss } from '@/types/boss'
+import { playRandomTrack, playWinTrack, stopCurrentTrack, toggleMusicState } from '@/utils/audio'
 
 export default function Home() {
   const [bosses, setBosses] = useState<Boss[]>([]);
   const [selectedBoss, setSelectedBoss] = useState<Boss | null>(null);
   const [deathCounter, setDeathCounter] = useState<DeathCounter | null>(null);
-  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-  const [isAudioEnable, setIsAudioEnable] = useState(false);
-  
-  // Список музыкальных треков
-  const audioTracks = [
-    "/audio/track1.mp3",
-    "/audio/track2.mp3",
-    "/audio/track3.mp3",
-    "/audio/track4.mp3",
-    "/audio/track5.mp3",
-    "/audio/track6.mp3",
-    "/audio/track7.mp3",
-    "/audio/track8.mp3"
-  ];
-  
-  const winTrack = ["/audio/gimn.mp3"];
-  
-  // Функция для воспроизведения случайного трека
-  const playRandomTrack = () => {
-    if (!isAudioEnable) {
-      return;
-    }
-    
-    stopCurrentTrack(); // Остановим текущий трек перед воспроизведением нового
-    
-    const randomIndex = Math.floor(Math.random() * audioTracks.length);
-    const audio = new Audio(audioTracks[randomIndex]);
-    setCurrentAudio(audio); // Сохраняем объект текущего аудио
-    audio.play();
-  };
-  
-  // Функция для остановки текущего трека
-  const stopCurrentTrack = () => {
-    if (currentAudio) {
-      currentAudio.pause(); // Останавливаем воспроизведение
-      currentAudio.currentTime = 0; // Сбрасываем трек на начало
-      setCurrentAudio(null); // Сбрасываем состояние
-    }
-  };
-  
-  // Функция для победного трека
-  const playWinTrack = () => {
-    if (!isAudioEnable) {
-      return;
-    }
-    
-    stopCurrentTrack()
-    const audio = new Audio(winTrack[0]);
-    setCurrentAudio(audio);
-    audio.play();
-  }
+  const audioState = useAudioStore();
   
   // Получение состояния музыки
-  /// Загружаем состояние музыки из localStorage при загрузке
+  // Загружаем состояние музыки из localStorage при загрузке
   useEffect(() => {
     const savedAudioState = localStorage.getItem("isAudioEnable");
     if (savedAudioState !== null) {
-      setIsAudioEnable(JSON.parse(savedAudioState));
+      audioState.setIsAudioEnabled(JSON.parse(savedAudioState));
     }
   }, []);
 
-// Сохраняем состояние музыки в localStorage при изменении
+  // Сохраняем состояние музыки в localStorage при изменении
   useEffect(() => {
-    localStorage.setItem("isAudioEnable", JSON.stringify(isAudioEnable));
-  }, [isAudioEnable]);
-  
-  
-  
-  // Функция для состояния музыки
-  const toggleMusicState = () => {
-    setIsAudioEnable(!isAudioEnable);
-  }
+    localStorage.setItem("isAudioEnable", JSON.stringify(audioState.isAudioEnabled));
+  }, [audioState.isAudioEnabled]);
   
   // Получение списка боссов из Supabase
   useEffect(() => {
@@ -150,7 +95,7 @@ export default function Home() {
       if (error) {
         console.error("Ошибка при увеличении счетчика смертей:", error.message);
       } else {
-        playRandomTrack();
+        playRandomTrack(audioState);
         setDeathCounter(data);
       }
     }
@@ -229,7 +174,7 @@ export default function Home() {
                 <Plus size={72} />
               </Button>
             </div>
-            <Button onClick={playWinTrack} className="text-center mt-6 text-xl">Победа 👑</Button>
+            <Button onClick={() => playWinTrack(audioState)} className="text-center mt-6 text-xl">Победа 👑</Button>
           </div>
         ) : (
           <p className="text-lg text-gray-500">Выберите босса, чтобы начать.</p>
@@ -238,11 +183,11 @@ export default function Home() {
       <footer className="flex flex-col justify-center items-center w-full gap-x-4">
         <h3 className="text-lg mb-3">Музыка:</h3>
         <div className="flex flex-row justify-center w-full gap-x-4">
-          <Button onClick={stopCurrentTrack}>Стоп</Button>
+          <Button onClick={() => stopCurrentTrack(audioState.currentAudio, audioState.setCurrentAudio)}>Стоп</Button>
           {
-            isAudioEnable
-              ? <Button onClick={toggleMusicState}>Запретить</Button>
-              : <Button onClick={toggleMusicState}>Разрешить</Button>
+            audioState.isAudioEnabled
+              ? <Button onClick={() => toggleMusicState(audioState.toggleAudio)}>Запретить</Button>
+              : <Button onClick={() => toggleMusicState(audioState.toggleAudio)}>Разрешить</Button>
           }
         </div>
       </footer>
