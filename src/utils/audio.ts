@@ -1,6 +1,6 @@
 "use client";
 
-import { IAudioStore } from '@/store/audioStore';
+import { IAudioStore } from '@/store/useAudioStore';
 
 const audioTracks = [
 	"/audio/track1.mp3",

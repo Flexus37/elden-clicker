@@ -1,6 +1,8 @@
 "use client";
 
-import { useAudioStore } from '@/store/audioStore'
+import { TimerComponent } from '@/components/timerComponent/TimerComponent'
+import { useAudioStore } from '@/store/useAudioStore'
+import { useTimerStore } from '@/store/useTimerStore'
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
@@ -14,6 +16,7 @@ export default function Home() {
   const [bosses, setBosses] = useState<Boss[]>([]);
   const [selectedBoss, setSelectedBoss] = useState<Boss | null>(null);
   const [deathCounter, setDeathCounter] = useState<DeathCounter | null>(null);
+  const [isFinished, setIsFinished] = useState(false);
   const audioState = useAudioStore();
   
   // Получение состояния музыки
@@ -119,37 +122,22 @@ export default function Home() {
     }
   };
   
-  // Добавление нового босса
-  const addBoss = async (newBoss: NewBoss) => {
-    const { data: bossData, error: bossError } = await supabase
-      .from("bosses")
-      .insert(newBoss)
-      .select()
-      .single();
-    
-    if (bossError) {
-      console.error("Ошибка при добавлении босса:", bossError.message);
-      return;
-    }
-    
-    // Создаем запись в death_counters для нового босса
-    const { error: counterError } = await supabase.from("death_counters").insert({
-      boss_id: bossData.id,
-      death_count: 0,
-    });
-    
-    if (counterError) {
-      console.error("Ошибка при создании счетчика смертей:", counterError.message);
-    } else {
-      setBosses((prev) => [...prev, bossData]);
-    }
-  };
-  
   // Выбор босса
   const selectBoss = (bossId: number) => {
     const boss = bosses.find((b) => b.id === bossId) || null;
     setSelectedBoss(boss);
   };
+  
+  // Остановка таймера при победе и проигрывание музыки
+  const handleBossWin = async () => {
+    if (!selectedBoss) return;
+    
+    const setTimerStatus = useTimerStore.getState().setTimerStatus;
+    setTimerStatus("finished");
+    
+    playWinTrack(audioState);
+  };
+  
   
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 gap-16 font-[family-name:var(--font-geist-sans)]">
@@ -159,12 +147,13 @@ export default function Home() {
       <main className="flex flex-col gap-8 row-start-2 items-center justify-center sm:items-start">
         <Image className="mx-auto" src="/papich.gif" alt="Гифка папича" width={250} height={250} />
         <div className="flex justify-center w-full">
-          <BossSelectMenu bosses={bosses} onAddBoss={addBoss} onSelectBoss={selectBoss} />
+          <BossSelectMenu bosses={bosses} onSelectBoss={selectBoss} setBosses={setBosses} />
         </div>
         {selectedBoss ? (
           <div className="flex flex-col items-center gap-4">
             <h2 className="text-2xl">{selectedBoss.name}</h2>
             <p>{selectedBoss.description ?? ""}</p>
+            <TimerComponent bossId={selectedBoss.id} />
             <div className="flex flex-row justify-center items-center gap-x-8">
               <Button size="icon" className="px-9 py-8" onClick={decrementDeathCount}>
                 <Minus size={72} />
@@ -174,7 +163,7 @@ export default function Home() {
                 <Plus size={72} />
               </Button>
             </div>
-            <Button onClick={() => playWinTrack(audioState)} className="text-center mt-6 text-xl">
+            <Button onClick={handleBossWin} className="text-center mt-6 text-xl">
               Победа
               <Crown />
             </Button>
