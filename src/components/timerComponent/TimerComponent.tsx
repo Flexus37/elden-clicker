@@ -5,13 +5,13 @@ import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Pause, Play, RotateCcw } from "lucide-react";
+import { formatTime } from '@/utils/formatTime'
 
 interface TimerProps {
 	bossId: number;
 }
 
 export const TimerComponent: React.FC<TimerProps> = ({ bossId }) => {
-	// const [status, setTimerStatus] = useState<"running" | "paused" | "stopped" | "finished">("stopped");
 	const elapsedTimeRef = useRef(0); // Общее время в секундах
 	const [localTime, setLocalTime] = useState(0); // Локальное отображение времени
 	const [lastStartTime, setLastStartTime] = useState<number | null>(null); // Timestamp последнего старта
@@ -164,14 +164,6 @@ export const TimerComponent: React.FC<TimerProps> = ({ bossId }) => {
 		}
 	};
 	
-	
-	// Форматирование времени
-	const formatTime = (seconds: number) => {
-		const h = Math.floor(seconds / 3600);
-		const m = Math.floor((seconds % 3600) / 60);
-		const s = seconds % 60;
-		return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-	};
 	
 	const renderTimerBtns = () => {
 		if (status === "finished")

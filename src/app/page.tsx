@@ -3,26 +3,37 @@
 import { TimerComponent } from '@/components/timerComponent/TimerComponent'
 import { useAudioStore } from '@/store/useAudioStore'
 import { useTimerStore } from '@/store/useTimerStore'
-import { useState, useEffect } from "react";
+import { RealtimeChannel } from '@supabase/realtime-js'
+import { useState, useEffect, use, useRef } from 'react'
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, Volume2, VolumeOff, Pause, Crown } from "lucide-react";
 import { BossSelectMenu } from "@/components/bossSelectMenu/BossSelectMenu";
 import { Boss, DeathCounter, type NewBoss } from '@/types/boss'
-import { playRandomTrack, playWinTrack, stopCurrentTrack, toggleMusicState } from '@/utils/audio'
+import {
+  playRandomTrack,
+  playTrack,
+  playWinTrack,
+  stopCurrentTrack,
+  toggleMusicState
+} from '@/utils/audio'
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use'
 
 export default function Home() {
   const [bosses, setBosses] = useState<Boss[]>([]);
   const [selectedBoss, setSelectedBoss] = useState<Boss | null>(null);
   const [deathCounter, setDeathCounter] = useState<DeathCounter | null>(null);
   const [isFinished, setIsFinished] = useState(false);
+  // const [isConfetti, setIsConfetti] = useState(false);
+  // const { width, height } = useWindowSize()
   const audioState = useAudioStore();
   
   // Получение состояния музыки
   // Загружаем состояние музыки из localStorage при загрузке
   useEffect(() => {
-    const savedAudioState = localStorage.getItem("isAudioEnable");
+    const savedAudioState = localStorage.getItem("isAudioEnabled");
     if (savedAudioState !== null) {
       audioState.setIsAudioEnabled(JSON.parse(savedAudioState));
     }
@@ -30,7 +41,7 @@ export default function Home() {
 
   // Сохраняем состояние музыки в localStorage при изменении
   useEffect(() => {
-    localStorage.setItem("isAudioEnable", JSON.stringify(audioState.isAudioEnabled));
+    localStorage.setItem("isAudioEnabled", JSON.stringify(audioState.isAudioEnabled));
   }, [audioState.isAudioEnabled]);
   
   // Получение списка боссов из Supabase
@@ -85,6 +96,34 @@ export default function Home() {
     };
   }, [selectedBoss]);
   
+  const channelAudioRef = useRef<RealtimeChannel | null>(null);
+  
+  // Audio
+  useEffect(() => {
+    if (!channelAudioRef.current) {
+      channelAudioRef.current = supabase
+        .channel("current_audio")
+        .on(
+          "broadcast",
+          { event: "new-audio" },
+          (response) => {
+            console.log("📡 Получено сообщение о треке:", response.payload.message);
+            playTrack(useAudioStore.getState(), response.payload.message);
+          }
+        )
+        .subscribe();
+    }
+    
+    return () => {
+      if (channelAudioRef.current) {
+        supabase.removeChannel(channelAudioRef.current);
+        channelAudioRef.current = null;
+      }
+    };
+  }, []);
+  
+  
+  
   // Увеличение счетчика смертей
   const incrementDeathCount = async () => {
     if (deathCounter) {
@@ -98,7 +137,22 @@ export default function Home() {
       if (error) {
         console.error("Ошибка при увеличении счетчика смертей:", error.message);
       } else {
-        playRandomTrack(audioState);
+        const currentAudio = playRandomTrack(audioState);
+        
+        if (channelAudioRef.current) {
+          try {
+            await channelAudioRef.current.send({
+              type: 'broadcast',
+              event: 'new-audio',
+              payload: { message: currentAudio },
+            });
+            
+            console.log("📡 Сообщение отправлено:", currentAudio);
+          } catch (error) {
+            console.error("Ошибка при отправке аудио:", error);
+          }
+        }
+        
         setDeathCounter(data);
       }
     }
@@ -117,6 +171,23 @@ export default function Home() {
       if (error) {
         console.error("Ошибка при уменьшении счетчика смертей:", error.message);
       } else {
+        
+        const currentAudio = playRandomTrack(audioState);
+        
+        if (channelAudioRef.current) {
+          try {
+            await channelAudioRef.current.send({
+              type: 'broadcast',
+              event: 'new-audio',
+              payload: { message: currentAudio },
+            });
+            
+            console.log("📡 Сообщение отправлено:", currentAudio);
+          } catch (error) {
+            console.error("Ошибка при отправке аудио:", error);
+          }
+        }
+        
         setDeathCounter(data);
       }
     }
@@ -135,16 +206,33 @@ export default function Home() {
     const setTimerStatus = useTimerStore.getState().setTimerStatus;
     setTimerStatus("finished");
     
-    playWinTrack(audioState);
+    const currentAudio = playWinTrack(audioState);
+    
+    if (channelAudioRef.current) {
+      try {
+        await channelAudioRef.current.send({
+          type: 'broadcast',
+          event: 'new-audio',
+          payload: { message: currentAudio },
+        });
+        
+        console.log("📡 Сообщение отправлено:", currentAudio);
+      } catch (error) {
+        console.error("Ошибка при отправке аудио:", error);
+      }
+    }
   };
   
   
+  
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 gap-16 font-[family-name:var(--font-geist-sans)]">
-      <header className="flex flex-row w-full justify-center">
-        <h1 className="text-3xl">Elden Ring Кликер</h1>
-      </header>
-      <main className="flex flex-col gap-8 row-start-2 items-center justify-center sm:items-start">
+    <>
+      {/* <Confetti */}
+      {/*   run={isConfetti} */}
+      {/*   width={1920} */}
+      {/*   height={1080} */}
+      {/* /> */}
+      <div className="flex flex-col gap-8 row-start-2 items-center justify-center sm:items-start mb-8">
         <Image className="mx-auto" src="/papich.gif" alt="Гифка папича" width={250} height={250} />
         <div className="flex justify-center w-full">
           <BossSelectMenu bosses={bosses} onSelectBoss={selectBoss} setBosses={setBosses} />
@@ -171,8 +259,8 @@ export default function Home() {
         ) : (
           <p className="text-lg text-gray-500">Выберите босса, чтобы начать.</p>
         )}
-      </main>
-      <footer className="flex flex-col justify-center items-center w-full gap-x-4">
+      </div>
+      <footer className="flex flex-col justify-center items-center w-full gap-x-4 mb-5">
         <h3 className="text-lg mb-3">Музыка:</h3>
         <div className="flex flex-row justify-center w-full gap-x-4">
           <Button onClick={() => stopCurrentTrack(audioState.currentAudio, audioState.setCurrentAudio)}>
@@ -192,6 +280,6 @@ export default function Home() {
           }
         </div>
       </footer>
-    </div>
+    </>
   );
 }

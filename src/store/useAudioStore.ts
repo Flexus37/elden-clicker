@@ -11,8 +11,8 @@ export interface IAudioStore {
 export const useAudioStore = create<IAudioStore>()((set) => ({
 	isAudioEnabled: false,
 	currentAudio: null,
-	toggleAudio: () => set(state => ({isAudioEnabled: !state.isAudioEnabled
+	toggleAudio: () => set((state) => ({isAudioEnabled: !state.isAudioEnabled
 	})),
 	setIsAudioEnabled: (isAudioEnabled) => set(() => ({isAudioEnabled})),
-	setCurrentAudio: (currentAudio) => set(() => ({currentAudio}))
+	setCurrentAudio: (currentAudio) => set(() => ({currentAudio})),
 }))
